@@ -43,8 +43,10 @@ docker compose up -d --build --wait
 - GitHub 访问权限和微信小程序权限相互独立。仅在本地使用游客 AppID 不需要加入正式小程序；如需使用团队的正式 AppID，请让管理员在微信公众平台添加你的微信号为项目成员并授予开发权限。
 - 不要提交真实 AppSecret、访问令牌、用户数据或本机的 `project.private.config.json`。
 
-## 部署与许可
+## 部署
 
 仓库中的 Compose **仅用于本地开发**：包含公开的演示凭据、明文 HTTP/WS 和审核旁路，不要直接部署到公网。正式部署应关闭后端 `LOCAL_DEMO` 和前端 `miniprogram/lib/api.js` 的 `localDemo`，在服务端配置 `WX_APP_ID`、`WX_APP_SECRET` 和独立会话密钥，并配置 HTTPS/WSS 合法域名、内容审核、私有媒体存储及数据保留期限。
 
-仓库目前未附开源许可证；公开可见不等于授予开源许可。
+## 许可证
+
+本项目采用 [MIT 许可证](LICENSE)。

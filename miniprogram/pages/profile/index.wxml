@@ -1,0 +1,22 @@
+<view class="screen tab-screen profile-screen">
+  <view wx:if="{{user}}" class="profile panel row">
+    <image wx:if="{{user.avatar}}" class="avatar profile-avatar" src="{{user.avatar}}" mode="aspectFill" />
+    <view wx:else class="avatar profile-avatar fallback"><glyph-icon name="person" size="68rpx" /></view>
+    <view class="stack profile-copy">
+      <view class="row identity"><text class="name ellipsis">{{user.nickname}}</text><text wx:if="{{user.mbti}}" class="badge">{{user.mbti}}</text></view>
+      <text wx:if="{{user.bio}}" class="bio muted">{{user.bio}}</text>
+    </view>
+    <button class="outline-button edit" data-view="edit" bindtap="open">编辑资料</button>
+  </view>
+  <view wx:if="{{error}}" class="empty error"><text>{{error}}</text><button class="text-button" bindtap="load">重试</button></view>
+  <view wx:elif="{{!user}}" class="empty">正在加载资料…</view>
+  <view wx:for="{{groups}}" wx:for-item="group" wx:key="key" class="menu panel">
+    <button wx:for="{{group.items}}" wx:key="view" class="item row" data-view="{{item.view}}" bindtap="open">
+      <glyph-icon name="{{item.icon}}" size="46rpx" />
+      <text class="stack item-label">{{item.label}}</text>
+      <glyph-icon name="chevron" size="24rpx" />
+    </button>
+  </view>
+  <button wx:if="{{localDemo}}" class="text-button account" disabled="{{switching}}" bindtap="switchAccount">{{switching ? '正在切换…' : '切换本地账号' + (account ? ' · ' + account : '')}}</button>
+  <button class="text-button account" disabled="{{switching}}" bindtap="logout">退出登录</button>
+</view>

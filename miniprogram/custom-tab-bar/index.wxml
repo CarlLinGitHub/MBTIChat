@@ -1,0 +1,6 @@
+<view class="tab-bar">
+  <button wx:for="{{tabs}}" wx:key="path" class="tab {{selected === index ? 'selected' : ''}}" data-index="{{index}}" bindtap="select">
+    <view class="icon"><glyph-icon name="{{item.icon}}" size="41rpx" /></view>
+    <text>{{item.label}}</text>
+  </button>
+</view>

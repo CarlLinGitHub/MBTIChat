@@ -1,0 +1,84 @@
+<view class="chat">
+  <block wx:if="{{room}}">
+    <view class="room-header">
+      <button class="participants row" bindtap="openSheet" aria-label="房间成员与设置，{{room.online}} 人在线">
+        <view class="row stack online"><view class="dot"></view><text>{{room.online}} 人在线</text></view>
+        <view class="row avatars">
+          <block wx:for="{{room.topMembers}}" wx:key="id">
+            <image wx:if="{{item.avatar}}" class="avatar member-avatar" src="{{item.avatar}}" mode="aspectFill" />
+            <view wx:else class="avatar member-avatar fallback"><glyph-icon name="person" size="26rpx" /></view>
+          </block>
+        </view>
+        <glyph-icon name="people" size="40rpx" />
+      </button>
+      <view wx:if="{{room.announcement}}" class="announcement row">
+        <glyph-icon name="megaphone" size="35rpx" />
+        <text class="stack"><text class="announcement-title">群公告</text> · {{room.announcement}}</text>
+      </view>
+    </view>
+    <block wx:if="{{room.joined}}">
+      <view wx:if="{{connection}}" class="connection muted">{{connection}}</view>
+      <scroll-view class="history" scroll-y enhanced upper-threshold="50" scroll-into-view="{{scrollTarget}}" bindscroll="onScroll" bindscrolltoupper="loadOlder">
+        <view class="history-body">
+          <button wx:if="{{hasOlder && !historyError}}" class="text-button history-control" disabled="{{olderLoading}}" bindtap="loadOlder">{{olderLoading ? '正在加载…' : '查看更早消息'}}</button>
+          <view wx:if="{{historyError}}" class="empty error"><text>{{historyError}}</text><button class="text-button" bindtap="retryHistory">重试</button></view>
+          <view wx:elif="{{!loadedHistory}}" class="empty">正在加载聊天记录…</view>
+          <view wx:elif="{{!messages.length}}" class="empty">还没有消息，聊点什么吧</view>
+          <block wx:for="{{messages}}" wx:key="key">
+            <view wx:if="{{item.timestamp}}" class="timestamp muted">{{item.timestamp}}</view>
+            <view id="{{item.key}}" class="message {{item.own ? 'mine' : ''}} {{item.hidden ? 'concealed' : ''}} {{item.seq ? 'visible-message' : ''}}" data-seq="{{item.seq}}">
+              <block wx:if="{{!item.own && !item.hidden}}">
+                <image wx:if="{{item.avatar}}" class="avatar sender-avatar" src="{{item.avatar}}" mode="aspectFill" data-id="{{item.senderId}}" data-label="{{item.sender}}" bindtap="blockMember" />
+                <view wx:else class="avatar sender-avatar fallback" data-id="{{item.senderId}}" data-label="{{item.sender}}" bindtap="blockMember"><glyph-icon name="person" size="48rpx" /></view>
+              </block>
+              <view class="message-main">
+                <view wx:if="{{item.sender && !item.own}}" class="row sender"><text class="ellipsis">{{item.sender}}</text><text wx:if="{{item.mbti}}" class="badge sender-mbti">{{item.mbti}}</text></view>
+                <image wx:if="{{item.picture}}" class="picture" src="{{item.picture}}" mode="widthFix" data-id="{{item.senderId}}" data-label="{{item.sender}}" data-seq="{{item.seq}}" data-pending="{{item.pending}}" bindtap="previewImage" bindlongpress="blockMember" binderror="imageError" />
+                <text wx:else class="bubble" user-select data-id="{{item.senderId}}" data-label="{{item.sender}}" bindlongpress="blockMember">{{item.text}}</text>
+                <button wx:if="{{item.failed}}" class="retry" data-pending="{{item.pending}}" bindtap="retrySend">发送失败 · 点击重试</button>
+                <view wx:elif="{{item.sending}}" class="pending-label muted">发送中…</view>
+              </view>
+            </view>
+          </block>
+          <view id="end-a" class="end-marker"></view><view id="end-b" class="end-marker"></view>
+        </view>
+      </scroll-view>
+      <view class="compose-wrap">
+        <button wx:if="{{newBelow}}" class="primary newest" bindtap="jumpNewest">查看新消息 ↓</button>
+        <view class="row composer">
+          <button class="add" bindtap="sendImage" aria-label="选择并发送图片"><glyph-icon name="plus" size="46rpx" /></button>
+          <input class="stack draft" value="{{draft}}" placeholder="说点什么…" placeholder-class="draft-placeholder" maxlength="2000" confirm-type="send" bindinput="onInput" bindconfirm="sendText" aria-label="消息内容" />
+          <button class="send" disabled="{{!draft}}" bindtap="sendText" aria-label="发送消息"><glyph-icon name="send" size="40rpx" /></button>
+        </view>
+      </view>
+    </block>
+    <view wx:else class="join-card panel">
+      <view class="join-name">{{room.name}}</view>
+      <view class="muted intro">{{room.description}}</view>
+      <view class="muted join-tip">{{room.status === 'closed' ? '此聊天室已关闭' : '加入后即可参与聊天，聊天记录从本轮加入开始。'}}</view>
+      <button wx:if="{{room.status !== 'closed'}}" class="primary" disabled="{{roomBusy}}" bindtap="join">加入聊天室</button>
+    </view>
+    <view wx:if="{{sheet}}" class="sheet-layer">
+      <view class="scrim" bindtap="closeSheet"></view>
+      <view class="sheet" role="dialog" aria-label="聊天室详情">
+        <view class="row sheet-header"><text class="stack sheet-title">聊天室详情</text><button class="text-button close" bindtap="closeSheet">关闭</button></view>
+        <scroll-view wx:if="{{room.members.length}}" scroll-y class="member-list">
+          <button wx:for="{{room.members}}" wx:key="id" class="member row" data-id="{{item.id}}" data-label="{{item.nickname}}" disabled="{{item.own || roomBusy}}" bindtap="blockMember">
+            <image wx:if="{{item.avatar}}" class="avatar member-avatar" src="{{item.avatar}}" mode="aspectFill" />
+            <view wx:else class="avatar member-avatar fallback"><glyph-icon name="person" size="26rpx" /></view>
+            <text class="stack ellipsis">{{item.nickname}}{{item.own ? '（我）' : ''}}</text>
+            <text wx:if="{{item.mbti}}" class="badge">{{item.mbti}}</text>
+          </button>
+        </scroll-view>
+        <view wx:else class="muted member-empty">{{room.joined ? '暂无成员资料' : '加入聊天室后可查看成员'}}</view>
+        <view class="row sheet-actions">
+          <button class="stack outline-button" disabled="{{roomBusy}}" bindtap="favorite">{{room.favorite ? '取消收藏' : '收藏聊天室'}}</button>
+          <button wx:if="{{room.joined}}" class="stack outline-button leave" disabled="{{roomBusy}}" bindtap="leave">退出聊天室</button>
+          <button wx:elif="{{room.status !== 'closed'}}" class="stack primary" disabled="{{roomBusy}}" bindtap="join">加入聊天室</button>
+        </view>
+      </view>
+    </view>
+  </block>
+  <view wx:elif="{{roomError}}" class="empty error"><text>{{roomError}}</text><button wx:if="{{roomError !== '聊天室不存在'}}" class="text-button" bindtap="refreshRoom">重试</button></view>
+  <view wx:else class="empty">正在加载聊天室…</view>
+</view>

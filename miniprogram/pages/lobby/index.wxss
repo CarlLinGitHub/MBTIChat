@@ -1,0 +1,12 @@
+.heading { padding: 0 11rpx; font-size: 46rpx; font-weight: 750; line-height: 1.25; }
+.search-box { gap: 23rpx; padding: 0 28rpx; height: 64rpx; margin-top: 31rpx; border-radius: 99rpx; background: #eee9f0; color: #554358; }
+.search-box input { font-size: 27rpx; }
+.search-placeholder { color: #817086; }
+.filters { margin: 26rpx 2rpx 29rpx; }
+.room { min-height: 142rpx; gap: 14rpx; margin-bottom: 13rpx; padding: 16rpx; }
+.room-hover { background: #f1eaf4; }
+.cover-default { display: flex; align-items: center; justify-content: center; color: #8766a0; }
+.room-copy { margin-left: 8rpx; }
+.room-name { font-size: 32rpx; font-weight: 730; }
+.description { margin-top: 2rpx; font-size: 24rpx; }
+.online { gap: 8rpx; font-size: 24rpx; white-space: nowrap; }

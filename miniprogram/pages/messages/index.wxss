@@ -1,0 +1,7 @@
+.filters { margin: 0 2rpx 17rpx; }
+.conversation { min-height: 145rpx; margin: 0 2rpx; padding: 16rpx 8rpx; gap: 24rpx; border-bottom: 1px solid #e0d5d8; }
+.cover-default { display: flex; align-items: center; justify-content: center; color: #8766a0; }
+.room-name { font-size: 33rpx; font-weight: 730; }
+.summary { margin-top: 4rpx; font-size: 25rpx; }
+.trailing { flex: none; align-self: flex-start; padding-top: 5rpx; text-align: right; font-size: 25rpx; }
+.unread { display: table; margin: 8rpx 2rpx 0 auto; min-width: 36rpx; padding: 0 7rpx; border-radius: 999rpx; background: #9059da; color: #fff; text-align: center; font-size: 23rpx; line-height: 36rpx; }

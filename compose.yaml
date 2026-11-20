@@ -1,0 +1,54 @@
+services:
+  db:
+    build: ./db
+    environment:
+      MYSQL_DATABASE: mbtichat
+      MYSQL_USER: mbti
+      MYSQL_PASSWORD: mbti-local
+      MYSQL_ROOT_PASSWORD: root-local
+      TZ: UTC
+    healthcheck:
+      test: [CMD-SHELL, 'mysql --protocol=TCP -h 127.0.0.1 -u mbti -pmbti-local mbtichat -e "SELECT 1 FROM user_feedback LIMIT 1"']
+      interval: 3s
+      timeout: 3s
+      retries: 30
+    volumes:
+      - mysql-storage:/var/lib/mysql
+      - ./db/01-schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+      - ./db/02-demo.sql:/docker-entrypoint-initdb.d/02-demo.sql:ro
+  redis:
+    image: redis:7-alpine
+    healthcheck:
+      test: [CMD, redis-cli, ping]
+      interval: 3s
+      timeout: 2s
+      retries: 10
+  api:
+    build: ./backend
+    environment:
+      MYSQL_HOST: db
+      MYSQL_DATABASE: mbtichat
+      MYSQL_USER: mbti
+      MYSQL_PASSWORD: mbti-local
+      REDIS_URL: redis://redis:6379
+      LOCAL_DEMO: '1'
+      SESSION_SECRET: local-demo-only-change-before-deploying-349dc27e6a34
+      MEDIA_DIR: /app/media
+      TZ: UTC
+    healthcheck:
+      test: [CMD, node, -e, "fetch('http://127.0.0.1:8080/healthz').then(r=>process.exit(r.ok?0:1),()=>process.exit(1))"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+    ports:
+      - '127.0.0.1:8080:8080'
+    volumes:
+      - media:/app/media
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+volumes:
+  mysql-storage:
+  media:

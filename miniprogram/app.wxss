@@ -1,0 +1,29 @@
+page {
+  min-height: 100%;
+  background: #faf6f4;
+  color: #271330;
+  font: 28rpx/1.45 -apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif;
+}
+view, text, button, image, input, textarea, scroll-view { box-sizing: border-box; }
+button { margin: 0; padding: 0; border-radius: 0; background: transparent; color: inherit; line-height: inherit; font-size: inherit; }
+button::after { border: none; }
+button[disabled] { opacity: .55; }
+.screen { padding: 24rpx 22rpx 28rpx; }
+.tab-screen { padding-bottom: calc(84rpx + env(safe-area-inset-bottom)); }
+.row { display: flex; align-items: center; }
+.stack { min-width: 0; flex: 1; }
+.ellipsis { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.muted { color: #655569; }
+.cover { display: block; width: 118rpx; height: 112rpx; flex: none; border-radius: 25rpx; background: #eee2f5; }
+.avatar { display: block; flex: none; border-radius: 50%; background: #eee2f5; }
+.dot { width: 16rpx; height: 16rpx; border-radius: 50%; flex: none; background: #54a280; }
+.panel { border: 1px solid #d9cdce; border-radius: 22rpx; }
+.pills { display: flex; flex-flow: row wrap; align-items: center; gap: 12rpx; }
+.pill, .outline-button { display: inline-flex; justify-content: center; align-items: center; border: 1px solid #dbd1d4; border-radius: 999rpx; padding: 8rpx 28rpx; white-space: nowrap; }
+.pills .pill { box-sizing: border-box; flex: 0 0 118rpx; width: 118rpx; min-height: 56rpx; margin: 0; padding: 8rpx 0; font-size: 28rpx; }
+.pill.selected { font-weight: 650; background: #e6cef8; border-color: #e6cef8; }
+.primary { padding: 16rpx 30rpx; border-radius: 999rpx; background: #7948bc; color: #fff; font-weight: 600; }
+.badge { display: inline-flex; align-items: center; justify-content: center; border-radius: 999rpx; background: #eadcf9; color: #582b8b; font-size: 23rpx; padding: 1rpx 14rpx; white-space: nowrap; }
+.empty { margin: 44rpx 12rpx; color: #736679; font-size: 26rpx; text-align: center; }
+.text-button { min-height: 48rpx; color: #6e3ca8; }
+.error { color: #984260; }

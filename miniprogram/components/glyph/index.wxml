@@ -1,0 +1,7 @@
+<view class="icon {{name}}" style="font-size: {{size}};" aria-hidden="true">
+  <view class="one"></view><view class="two"></view><view class="three"></view>
+  <view wx:if="{{name === 'chat'}}" class="mark">•••</view>
+  <view wx:if="{{name === 'favorite'}}" class="mark">♡</view>
+  <view wx:if="{{name === 'help'}}" class="mark">?</view>
+  <view wx:if="{{name === 'block'}}" class="mark">−</view>
+</view>

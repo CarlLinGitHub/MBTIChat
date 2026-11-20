@@ -1,0 +1,31 @@
+{
+  "pages": [
+    "pages/login/index",
+    "pages/onboarding/index",
+    "pages/quiz/index",
+    "pages/lobby/index",
+    "pages/messages/index",
+    "pages/profile/index",
+    "pages/room/index",
+    "pages/settings/index"
+  ],
+  "window": {
+    "navigationBarBackgroundColor": "#faf6f4",
+    "navigationBarTextStyle": "black",
+    "navigationBarTitleText": "MBTI 聊天室",
+    "backgroundColor": "#faf6f4"
+  },
+  "tabBar": {
+    "custom": true,
+    "color": "#271330",
+    "selectedColor": "#7642bf",
+    "backgroundColor": "#faf6f4",
+    "list": [
+      { "pagePath": "pages/lobby/index", "text": "大厅" },
+      { "pagePath": "pages/messages/index", "text": "消息" },
+      { "pagePath": "pages/profile/index", "text": "我的" }
+    ]
+  },
+  "style": "v2",
+  "usingComponents": { "glyph-icon": "/components/glyph/index" }
+}

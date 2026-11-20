@@ -1,0 +1,4 @@
+{
+  "component": true,
+  "usingComponents": { "glyph-icon": "/components/glyph/index" }
+}

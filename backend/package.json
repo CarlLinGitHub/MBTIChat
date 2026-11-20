@@ -1,0 +1,14 @@
+{
+  "name": "mbtichat-backend",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": { "start": "node server.js" },
+  "engines": { "node": ">=22" },
+  "dependencies": {
+    "fastify": "5.6.2",
+    "mysql2": "3.15.3",
+    "redis": "5.10.0",
+    "ws": "8.18.3"
+  }
+}

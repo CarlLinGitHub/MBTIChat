@@ -1,0 +1,62 @@
+<view wx:if="{{!result}}" class="quiz-screen">
+  <view class="progress-meta">
+    <text class="informal">非正式测验</text>
+    <text>第 {{questionIndex + 1}} / {{total}} 题</text>
+  </view>
+  <view class="progress-track" aria-hidden="true">
+    <view class="progress-value" style="width: {{(questionIndex + 1) / total * 100}}%;" />
+  </view>
+
+  <view class="question">{{question}}</view>
+  <view class="question-hint">请选择最符合你平时状态的选项</view>
+  <view class="answers">
+    <button wx:for="{{options}}" wx:key="value"
+      class="answer {{item.value === answer ? 'selected' : ''}}"
+      aria-label="{{item.label + (item.value === answer ? '，已选择' : '')}}"
+      data-value="{{item.value}}" bindtap="chooseAnswer">
+      <view class="answer-dot" aria-hidden="true" />
+      <text>{{item.label}}</text>
+    </button>
+  </view>
+
+  <view class="quiz-actions">
+    <button class="quiz-button" disabled="{{questionIndex === 0}}" bindtap="previous">上一题</button>
+    <button class="quiz-button quiz-primary" disabled="{{!answer && answer !== 0}}" bindtap="next">
+      {{questionIndex + 1 === total ? '查看结果' : '下一题'}}
+    </button>
+  </view>
+</view>
+
+<view wx:else class="quiz-screen">
+  <view class="result-card">
+    <view class="result-title">{{chosenType ? (result.type ? '你的参考类型' : '你选择的参考类型') : '得分相同的维度尚不确定'}}</view>
+    <view class="result-type">
+      <text wx:for="{{result.dimensions}}" wx:key="key">{{item.letter || tieChoices[item.key] || '?'}}</text>
+    </view>
+    <view class="informal">仅供自我探索，不是官方 MBTI 测评。</view>
+  </view>
+
+  <view wx:if="{{!result.type}}" class="ties">
+    <view class="question-hint">得分相同的维度可由你选择。请选择更符合自己的描述，再带回设置。</view>
+    <block wx:for="{{result.dimensions}}" wx:key="key" wx:for-item="dimension">
+      <view wx:if="{{!dimension.letter}}" class="tie">
+        <view class="tie-label">{{dimension.label}} · {{dimension.poles[0].letter}} / {{dimension.poles[1].letter}}</view>
+        <view class="tie-options">
+          <button wx:for="{{dimension.poles}}" wx:key="letter"
+            class="tie-option {{tieChoices[dimension.key] === item.letter ? 'selected' : ''}}"
+            aria-label="{{item.letter + '，' + item.label + (tieChoices[dimension.key] === item.letter ? '，已选择' : '')}}"
+            data-axis="{{dimension.key}}" data-pole="{{item.letter}}" bindtap="choosePole">
+            <text class="tie-letter">{{item.letter}}</text>
+            <text>{{item.label}}</text>
+          </button>
+        </view>
+      </view>
+    </block>
+  </view>
+
+  <view class="quiz-actions">
+    <button class="quiz-button" bindtap="retake">重新测验</button>
+    <button class="quiz-button quiz-primary" disabled="{{!chosenType}}" bindtap="confirmResult">带回设置</button>
+  </view>
+  <button class="text-button edit-answers" bindtap="editAnswers">返回修改答案</button>
+</view>

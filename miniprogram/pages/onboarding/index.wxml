@@ -1,0 +1,39 @@
+<view class="onboarding-page">
+  <view class="onboarding-intro">
+    <text class="onboarding-title">你的 MBTI 是？</text>
+    <text class="onboarding-subtitle">知道就直接选，不确定也可以测一测</text>
+  </view>
+
+  <view class="onboarding-quiz">
+    <view class="onboarding-compass" aria-hidden="true">
+      <view class="onboarding-compass-face"><view class="onboarding-compass-needle" /></view>
+      <view class="onboarding-compass-ray ray-top" />
+      <view class="onboarding-compass-ray ray-middle" />
+      <view class="onboarding-compass-ray ray-bottom" />
+    </view>
+    <button class="onboarding-quiz-button" disabled="{{!ready || pending !== '' || destination !== ''}}" bindtap="openQuiz">开始测验</button>
+  </view>
+
+  <text class="onboarding-section-title">直接选择</text>
+  <view class="onboarding-grid">
+    <button wx:for="{{types}}" wx:key="*this" class="onboarding-option {{selected === item ? 'onboarding-option-selected' : ''}}"
+      data-type="{{item}}" aria-label="{{selected === item ? item + '，已选择' : item}}" disabled="{{!ready || pending !== '' || destination !== ''}}" bindtap="select">{{item}}</button>
+  </view>
+
+  <view class="onboarding-actions">
+    <view wx:if="{{pending === 'load' || pending === 'route'}}" class="onboarding-status">
+      {{pending === 'load' ? '正在加载资料…' : '正在打开页面…'}}
+    </view>
+    <view wx:if="{{error}}" class="onboarding-feedback">
+      <text class="error">{{error}}</text>
+      <button wx:if="{{destination}}" class="onboarding-link" bindtap="openDestination">重试打开页面</button>
+      <button wx:elif="{{!ready}}" class="onboarding-link" bindtap="loadUser">重试加载资料</button>
+    </view>
+    <button class="onboarding-confirm" disabled="{{!ready || !selected || pending !== '' || destination !== ''}}" loading="{{pending === 'save'}}" bindtap="confirmType">
+      {{pending === 'save' ? '保存中…' : '确认类型'}}
+    </button>
+    <button wx:if="{{!destination}}" class="onboarding-link onboarding-exit" disabled="{{pending !== ''}}" bindtap="returnToLogin">
+      {{pending === 'signout' ? '正在退出…' : '返回登录'}}
+    </button>
+  </view>
+</view>

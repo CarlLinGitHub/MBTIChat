@@ -1,0 +1,78 @@
+page { background: #f8f2f4; }
+
+.login-page {
+  min-height: 100vh;
+  padding: 167rpx 61rpx calc(34rpx + env(safe-area-inset-bottom));
+  padding-top: max(167rpx, calc(76rpx + env(safe-area-inset-top)));
+  color: #331038;
+  text-align: center;
+}
+.login-hero { display: block; width: 506rpx; height: 310rpx; margin: 0 auto; }
+.login-brand { display: block; margin-top: 35rpx; color: #320735; font-size: 80rpx; font-weight: 750; line-height: 87rpx; }
+.login-tagline { display: block; margin-top: 17rpx; color: #614262; font-size: 36rpx; line-height: 48rpx; letter-spacing: 5rpx; }
+.login-actions { margin-top: 106rpx; }
+button.login-primary, button.login-primary[disabled] {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 23rpx;
+  width: 100%;
+  min-height: 95rpx;
+  padding: 12rpx 24rpx;
+  border-radius: 22rpx;
+  background: #460c49;
+  color: #fff8fc;
+  font-size: 36rpx;
+  font-weight: 650;
+}
+.login-chat-icon { position: relative; width: 64rpx; height: 51rpx; flex: none; }
+.login-chat-bubble { position: absolute; border-radius: 50%; background: #fff8fc; }
+.login-chat-bubble::before, .login-chat-bubble::after { position: absolute; content: ''; }
+.login-chat-bubble::before { bottom: -4rpx; width: 0; height: 0; border-top: 10rpx solid #fff8fc; }
+.login-chat-bubble::after { top: 25%; left: 26%; width: 6rpx; height: 6rpx; border-radius: 50%; background: #460c49; box-shadow: 15rpx 0 #460c49; }
+.login-chat-bubble-back { top: 1rpx; left: 0; width: 45rpx; height: 35rpx; }
+.login-chat-bubble-back::before { left: 8rpx; border-right: 10rpx solid transparent; transform: rotate(12deg); }
+.login-chat-bubble-front { right: 0; bottom: 1rpx; width: 38rpx; height: 31rpx; border: 2rpx solid #460c49; box-sizing: content-box; }
+.login-chat-bubble-front::before { right: 5rpx; border-left: 9rpx solid transparent; transform: rotate(-12deg); }
+.login-chat-bubble-front::after { width: 5rpx; height: 5rpx; box-shadow: 12rpx 0 #460c49; }
+.login-consent, .login-consent-label { display: flex; align-items: center; justify-content: center; }
+.login-consent { flex-wrap: wrap; margin-top: 31rpx; color: #482049; font-size: 24rpx; line-height: 1.4; }
+.login-consent-label { gap: 10rpx; }
+.login-check { display: block; width: 34rpx; flex: none; transform: scale(.72); transform-origin: left center; }
+button.login-link, button.login-demo, button.login-demo[disabled] {
+  min-height: 44rpx;
+  background: transparent;
+  color: #7940ac;
+  font-weight: 600;
+}
+.login-consent-docs { display: inline-flex; flex: none; align-items: center; }
+button.login-policy-link { display: inline-flex; flex: none; align-items: center; justify-content: center; width: 6em; margin: 0; padding: 0; font-size: inherit; white-space: nowrap; }
+button.login-demo, button.login-demo[disabled] { margin: 14rpx auto 0; padding: 7rpx 22rpx; color: #69426f; font-size: 23rpx; }
+.login-status, .login-feedback { margin-top: 12rpx; color: #654e67; font-size: 24rpx; }
+.login-feedback button.login-link { margin: 5rpx auto 0; }
+
+.login-modal { position: fixed; z-index: 10; inset: 0; display: flex; align-items: center; justify-content: center; padding: 40rpx; }
+.login-modal-mask { position: absolute; inset: 0; background: rgba(32, 12, 33, .47); }
+.login-dialog { position: relative; width: 100%; max-width: 620rpx; padding: 34rpx; border-radius: 28rpx; background: #fff8fb; color: #331038; box-shadow: 0 12rpx 44rpx rgba(38, 10, 40, .17); }
+.login-dialog-title { display: block; font-size: 33rpx; font-weight: 700; }
+.login-dialog-note, .login-account-id { color: #68476a; font-size: 24rpx; }
+.login-dialog-note { display: block; margin: 9rpx 0 17rpx; }
+button.login-account {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  min-height: 72rpx;
+  margin-top: 10rpx;
+  padding: 10rpx 21rpx;
+  border: 1px solid #ded1e1;
+  border-radius: 15rpx;
+  background: #fbf3fb;
+  color: #331038;
+  font-weight: 600;
+  text-align: left;
+}
+.login-policy { display: block; height: 46vh; max-height: 536rpx; margin-top: 18rpx; }
+.login-paragraph { display: block; color: #482e4b; font-size: 28rpx; line-height: 1.65; }
+.login-paragraph + .login-paragraph { margin-top: 14rpx; }
+button.login-dialog-close { display: flex; align-items: center; justify-content: center; width: 100%; min-height: 68rpx; margin-top: 26rpx; border-radius: 16rpx; background: #460c49; color: #fff8fc; font-weight: 650; }

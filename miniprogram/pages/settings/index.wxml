@@ -1,0 +1,54 @@
+<view class="screen">
+  <view wx:if="{{error}}" class="empty error"><text>{{error}}</text><button class="text-button" bindtap="load">重试</button></view>
+  <view wx:elif="{{!loaded}}" class="empty">正在加载…</view>
+  <block wx:elif="{{view === 'edit' && form}}">
+    <view class="panel section">
+      <view class="field-label">头像</view>
+      <view class="row avatar-choices">
+        <button wx:for="{{avatarChoices}}" wx:key="key" class="avatar-choice {{form.avatar_key === item.key ? 'chosen' : ''}}" data-key="{{item.key}}" bindtap="changeAvatar" aria-label="选择头像 {{index + 1}}"><image class="avatar choice-image" src="{{item.src}}" mode="aspectFill" /></button>
+      </view>
+      <view class="field-label">昵称</view>
+      <input class="field" value="{{form.nickname}}" maxlength="40" data-field="nickname" bindinput="changeField" aria-label="昵称" />
+      <view class="field-label">MBTI</view>
+      <picker mode="selector" value="{{form.mbtiIndex}}" range="{{types}}" bindchange="changeType">
+        <view class="row field"><text class="stack">{{types[form.mbtiIndex]}}</text><glyph-icon name="chevron" size="22rpx" /></view>
+      </picker>
+      <view class="field-label">个人简介</view>
+      <textarea class="field bio" value="{{form.bio}}" maxlength="240" data-field="bio" bindinput="changeField" aria-label="个人简介" />
+    </view>
+    <button class="primary action" loading="{{busy}}" disabled="{{busy}}" bindtap="saveProfile">保存资料</button>
+  </block>
+  <view wx:elif="{{view === 'privacy' && form}}" class="panel section row">
+    <view class="stack"><view class="field-label toggle-label">公开我的 MBTI</view><view class="muted hint">关闭后，其他用户不会看到你的 MBTI。</view></view>
+    <switch checked="{{form.show_mbti}}" color="#8d57cc" disabled="{{busy}}" data-field="show_mbti" bindchange="toggle" aria-label="公开我的 MBTI" />
+  </view>
+  <view wx:elif="{{view === 'notifications' && form}}" class="panel section row">
+    <view class="stack"><view class="field-label toggle-label">消息通知</view><view class="muted hint">通知设置不会影响消息未读数。微信订阅通知需另外授权。</view></view>
+    <switch checked="{{form.notifications_enabled}}" color="#8d57cc" disabled="{{busy}}" data-field="notifications_enabled" bindchange="toggle" aria-label="消息通知" />
+  </view>
+  <block wx:elif="{{view === 'favorites' || view === 'blocks'}}">
+    <view wx:for="{{list}}" wx:key="id" class="panel section row list-item">
+      <view wx:if="{{view === 'favorites'}}" class="stack row list-main" data-id="{{item.id}}" bindtap="enterRoom" role="button">
+        <image wx:if="{{item.cover}}" class="cover list-cover" src="{{item.cover}}" mode="aspectFill" />
+        <text class="stack ellipsis">{{item.name}}</text>
+      </view>
+      <view wx:else class="stack row list-main">
+        <image wx:if="{{item.avatar}}" class="avatar list-avatar" src="{{item.avatar}}" mode="aspectFill" />
+        <text class="stack ellipsis">{{item.nickname}}</text>
+      </view>
+      <button class="outline-button remove" data-id="{{item.id}}" data-label="{{item.nickname}}" disabled="{{busy}}" bindtap="remove">{{view === 'favorites' ? '取消收藏' : '解除拉黑'}}</button>
+    </view>
+    <view wx:if="{{!list.length}}" class="empty">{{view === 'favorites' ? '还没有收藏的聊天室' : '黑名单是空的'}}</view>
+  </block>
+  <block wx:elif="{{view === 'help'}}">
+    <view class="panel section">
+      <view class="field-label toggle-label">怎样参与聊天？</view><view class="muted hint">在大厅找一个聊天室，进入后点击「加入聊天室」。退出后无法读取聊天记录，再加入只能看到新一轮加入后的消息。</view>
+      <view class="field-label">怎样管理好友互动？</view><view class="muted hint">在聊天室长按其他成员的消息，或在成员列表点击头像，可以拉黑该成员。在「我的 → 黑名单」可以解除拉黑。</view>
+    </view>
+    <view class="panel section">
+      <view class="field-label toggle-label">提交反馈</view>
+      <textarea class="field feedback" value="{{feedback}}" maxlength="2000" placeholder="告诉我们你遇到的问题或建议" bindinput="feedbackInput" aria-label="反馈正文" />
+      <button class="primary action" loading="{{busy}}" disabled="{{busy || !feedback}}" bindtap="submitFeedback">提交反馈</button>
+    </view>
+  </block>
+</view>

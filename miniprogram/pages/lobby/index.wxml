@@ -1,0 +1,23 @@
+<view class="screen tab-screen">
+  <view class="heading">找个房间聊聊</view>
+  <view class="search-box row">
+    <glyph-icon name="search" size="32rpx" />
+    <input class="stack" value="{{q}}" bindinput="search" bindconfirm="submitSearch" confirm-type="search" maxlength="60" placeholder="搜索聊天室" placeholder-class="search-placeholder" aria-label="搜索聊天室" />
+  </view>
+  <view class="pills filters">
+    <button wx:for="{{categories}}" wx:key="code" class="pill {{category === item.code ? 'selected' : ''}}" data-code="{{item.code}}" bindtap="filter">{{item.label}}</button>
+  </view>
+  <view wx:for="{{rooms}}" wx:key="id" class="room panel row" data-id="{{item.id}}" bindtap="enterRoom" hover-class="room-hover" role="button" aria-label="进入{{item.name}}">
+    <image wx:if="{{item.cover}}" class="cover" src="{{item.cover}}" mode="aspectFill" />
+    <view wx:else class="cover cover-default"><glyph-icon name="chat" /></view>
+    <view class="stack room-copy">
+      <text class="room-name ellipsis">{{item.name}}</text>
+      <text class="description muted ellipsis">{{item.description}}</text>
+    </view>
+    <view class="online row"><view class="dot"></view><text>{{item.online}} 人在线</text></view>
+    <glyph-icon name="chevron" size="26rpx" />
+  </view>
+  <view wx:if="{{error}}" class="empty error"><text>{{error}}</text><button class="text-button" bindtap="load">重试</button></view>
+  <view wx:elif="{{!loaded}}" class="empty">正在加载聊天室…</view>
+  <view wx:elif="{{!rooms.length}}" class="empty">没有找到聊天室</view>
+</view>

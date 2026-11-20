@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MBTI 聊天室 · 数据库设计</title>
+<style>
+:root{color-scheme:light dark;--accent:#7042ad;--line:#d7cbe3;--panel:#f5effa}@media(prefers-color-scheme:dark){:root{--accent:#d0abff;--line:#554665;--panel:#252031}}
+*{box-sizing:border-box}body{max-width:1060px;margin:auto;padding:28px 20px 60px;font:16px/1.65 system-ui,sans-serif}h1{line-height:1.2}h2{margin-top:2rem}a{color:var(--accent)}nav{display:flex;flex-wrap:wrap;gap:.5rem 1rem}header,aside,pre{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px}pre{overflow:auto;font-size:.85rem}table{width:100%;border-collapse:collapse}th,td{border-bottom:1px solid var(--line);padding:.55rem;text-align:left;vertical-align:top}th{background:var(--panel)}.table{overflow:auto}td:first-child{white-space:nowrap}summary{cursor:pointer;color:var(--accent);font-weight:bold}section{scroll-margin-top:1rem}
+</style>
+</head>
+<body>
+<header>
+<p>MBTI 聊天室 / 技术设计</p>
+<h1>群聊数据库设计</h1>
+<p>对应大厅、聊天室、消息与个人中心四张界面草稿。按公开主题房间设计：大厅可浏览，加入后才能看聊天和发言；退出后停止访问，再加入只看新一轮入群后的消息。</p>
+<nav aria-label="目录"><a href="#pages">页面映射</a><a href="#tables">表结构</a><a href="#flows">读写规则</a><a href="#ddl">建表 SQL</a></nav>
+</header>
+<main>
+<section id="pages"><h2>01 / 页面与数据</h2>
+<div class="table"><table><thead><tr><th scope="col">页面</th><th scope="col">数据来源</th></tr></thead><tbody>
+<tr><td>大厅</td><td>按房间名称搜索，按闲聊、兴趣、MBTI 分类过滤；在线人数来自实时服务，不等于成员数。</td></tr>
+<tr><td>聊天室</td><td>房间详情、当前公告、成员头像、按序分页的消息。昵称、头像和可见的 MBTI 从当前用户资料读取，不在每条消息复制。</td></tr>
+<tr><td>消息</td><td>只显示当前加入的房间，按最近活动倒序；预览本轮可见的最后一条消息，支持只看未读。</td></tr>
+<tr><td>我的</td><td>资料、MBTI 可见性、全局通知开关、收藏、黑名单、帮助与反馈。帮助正文为静态内容；反馈持久化。</td></tr>
+</tbody></table></div>
+<p><strong>存储分工：</strong>MySQL 8.0.16+ / InnoDB 存业务事实；后端用 HTTPS 提供查询与写入，WSS 广播实时事件；Redis 保存在线状态，媒体文件用私有对象存储。uni-app 不直连数据库。数据库连接统一 UTC；接口里的 BIGINT ID 和序号用十进制字符串，避免 JS 精度丢失。</p>
+</section>
+<section id="tables"><h2>02 / 核心表与关系</h2>
+<div class="table"><table><thead><tr><th scope="col">表</th><th scope="col">职责</th><th scope="col">主键及查询路径</th></tr></thead><tbody>
+<tr><td><code>users</code></td><td>微信登录身份、昵称、头像、简介、MBTI、隐私和通知偏好。</td><td><code>id</code>；<code>wechat_openid</code> 唯一。</td></tr>
+<tr><td><code>room_categories</code></td><td>闲聊、兴趣、MBTI；“全部”是前端筛选项，不入库。</td><td><code>id</code>；<code>code</code> 唯一。</td></tr>
+<tr><td><code>rooms</code></td><td>公开房间、简介、封面、当前公告、最近消息序号与时间。</td><td><code>id</code>；分类大厅索引和全量大厅索引。</td></tr>
+<tr><td><code>room_members</code></td><td>用户与房间的多对多关系，兼作用户会话状态；保留退出记录。</td><td><code>(room_id, user_id)</code>；按用户取会话、按房间取有效成员。</td></tr>
+<tr><td><code>room_messages</code></td><td>文本或单图消息，一条消息只写一行，不给每个群成员复制。</td><td><code>(room_id, seq)</code>；<code>(room_id, sender_id, client_msg_id)</code> 去重及支持按发件人排除自己的消息。</td></tr>
+<tr><td><code>room_favorites</code></td><td>收藏关系，独立于入群；收藏不授予聊天权限。</td><td><code>(user_id, room_id)</code>；按收藏时间倒序。</td></tr>
+<tr><td><code>user_blocks</code></td><td>单向拉黑；群里将对方内容渲染为占位，不改变全局消息序号。</td><td><code>(user_id, blocked_user_id)</code>；禁止拉黑自己。</td></tr>
+<tr><td><code>user_feedback</code></td><td>反馈正文和处理状态。</td><td><code>id</code>；按状态、时间查待处理反馈。</td></tr>
+</tbody></table></div>
+<p>分类一对多房间；房间一对多消息；用户与房间通过成员表或收藏表产生独立关系。公告只保留当前一条，因此放在房间表，不占消息序号。</p>
+</section>
+<section id="flows"><h2>03 / 读写规则</h2>
+<ol>
+<li><strong>微信登录：</strong>本项目只接入一个微信小程序，AppID 和 AppSecret 仅保存在服务端配置。服务端以登录 code 向微信换取 OpenID，再按 <code>wechat_openid</code> 查建用户。会话接口不暴露 OpenID 或微信 session_key；当前用户 ID 从后端会话取得。</li>
+<li><strong>加入 / 退出：</strong>锁定房间，再锁成员行。新加入或重新加入时，把房间当前 <code>last_seq</code> 同时写入 <code>joined_seq</code> 和 <code>last_read_seq</code>；已加入时重复加入不重置。退出设置 <code>left_at</code>，取消实时订阅；关闭房间后拒绝加入、读取和发言。历史查询始终带 <code>seq &gt; joined_seq</code>。</li>
+<li><strong>发送与重试：</strong>客户端为每次发送生成 UUID，同一次重试沿用。事务先 <code>SELECT ... FOR UPDATE</code> 锁房间，再检查成员身份和禁言。查找同一发送 UUID，命中且属于本轮会话则返回原消息，不再分配序号；命中此前会话则拒绝复用。否则插入 <code>last_seq + 1</code> 的消息、更新房间末条序号和时间，同事务提交。用提交后生成的结果确认与推送；客户端按 <code>(room_id, seq)</code> 去重。热门房间首先测量房间行锁等待，再决定是否改架构。</li>
+<li><strong>历史与重连：</strong>向上翻页用 <code>seq &lt; before_seq ORDER BY seq DESC LIMIT ?</code>，重连用 <code>seq &gt; after_seq ORDER BY seq ASC LIMIT ?</code>。订阅确认后再补拉，合并实时事件并按序去重；发现缺口或恢复前台时也补拉。序号表示房间内顺序，不按消息时间排序。被撤回或治理隐藏的消息保留原位置，后端只返回占位。</li>
+<li><strong>未读与预览：</strong>预览按 <code>rooms.last_seq</code> 取消息，但仅在 <code>last_seq &gt; joined_seq</code> 时展示且遵循屏蔽规则。未读统计游标之后的非本人消息，撤回和屏蔽占位仍占一个未读位置；本人发送不推进游标，以免吞掉别人未读。只看未读可用同一条件 <code>EXISTS</code>。会话按 <code>last_message_at DESC, room_id DESC</code> 排序，无可见消息时以本轮 <code>joined_at</code> 作为活动时间。</li>
+<li><strong>已读同步：</strong>仅当用户看到消息时上报连续已读位置，服务端将上报值限制在本轮可见范围，并用 <code>GREATEST</code> 原子推进，旧设备不会回退游标。已读请求携带当前 <code>joined_at</code> 的服务端原值并校验，拒绝退群前产生的过期请求；不要把服务端最新序号当作已读位置。</li>
+<li><strong>在线人数：</strong>Redis 按房间、用户、连接记录最后心跳，过期后剔除；统计未过期的去重用户，同人多端算一人。在线人数不落库，不用于鉴权。通知开关只控制通知，不改变未读；微信订阅消息还需独立的微信授权。</li>
+</ol>
+<details><summary>未读查询示例</summary><pre><code>SELECT COUNT(*) AS unread_count
+FROM room_members AS m
+JOIN rooms AS r ON r.id = m.room_id AND r.status = 'open'
+JOIN room_messages AS x ON x.room_id = m.room_id
+  AND x.seq &gt; GREATEST(m.joined_seq, m.last_read_seq)
+  AND x.sender_id &lt;&gt; m.user_id
+WHERE m.room_id = ? AND m.user_id = ? AND m.left_at IS NULL;</code></pre></details>
+<aside><strong>上线约束：</strong>大厅只查开放房间，初期房间数量少可用参数化 <code>LIKE</code>（转义通配符）做包含搜索；普通 B-tree 不加速前置通配符。后端对读、写、订阅、图片签名均校验权限；拒绝普通成员修改公告或禁言他人。消息内容和图片发布前审核，违规时清除对外内容、保留序号；设定留存和清理期限。若要物理归档消息，先定义历史保留边界并让补拉能识别边界，不能把历史缺口误判为漏包。</aside>
+</section>
+<section id="ddl"><h2>04 / MySQL 建表 SQL</h2><p>在已选中的空数据库执行。下列 SQL 包含表、约束、索引及初始分类；业务事务仍由服务端执行。对象字段存稳定对象键，不存短期签名 URL。</p>
+<pre><code>CREATE TABLE users (
+  id BIGINT UNSIGNED AUTO_INCREMENT COMMENT '用户 ID' PRIMARY KEY,
+  wechat_openid VARCHAR(128) CHARACTER SET ascii COLLATE ascii_bin NOT NULL COMMENT '用户在该小程序下的微信 OpenID',
+  nickname VARCHAR(40) NOT NULL COMMENT '显示昵称',
+  avatar_key VARCHAR(512) NULL COMMENT '头像的对象存储键，未设置时为空',
+  bio VARCHAR(240) NOT NULL DEFAULT '' COMMENT '个人简介',
+  mbti CHAR(4) CHARACTER SET ascii COLLATE ascii_bin NULL COMMENT 'MBTI 类型，未填写时为空',
+  show_mbti BOOLEAN NOT NULL DEFAULT TRUE COMMENT '是否向其他用户展示 MBTI',
+  notifications_enabled BOOLEAN NOT NULL DEFAULT TRUE COMMENT '是否开启消息通知，不影响未读计数',
+  created_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) COMMENT '账号创建时间（UTC）',
+  UNIQUE KEY uq_wechat_openid (wechat_openid),
+  CHECK (mbti IN ('ISTJ','ISFJ','INFJ','INTJ','ISTP','ISFP','INFP','INTP',
+                  'ESTP','ESFP','ENFP','ENTP','ESTJ','ESFJ','ENFJ','ENTJ'))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE room_categories (
+  id SMALLINT UNSIGNED AUTO_INCREMENT COMMENT '房间分类 ID' PRIMARY KEY,
+  code VARCHAR(24) NOT NULL COMMENT '分类唯一编码' UNIQUE,
+  name VARCHAR(24) NOT NULL COMMENT '分类显示名称',
+  sort_order SMALLINT UNSIGNED NOT NULL DEFAULT 0 COMMENT '分类展示顺序，值越小越靠前'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE rooms (
+  id BIGINT UNSIGNED AUTO_INCREMENT COMMENT '房间 ID' PRIMARY KEY,
+  category_id SMALLINT UNSIGNED NOT NULL COMMENT '所属分类 ID',
+  name VARCHAR(60) NOT NULL COMMENT '房间名称',
+  description VARCHAR(240) NOT NULL DEFAULT '' COMMENT '房间简介',
+  cover_key VARCHAR(512) NULL COMMENT '房间封面的对象存储键，未设置时为空',
+  status ENUM('open','closed') NOT NULL DEFAULT 'open' COMMENT '房间状态：开放或关闭',
+  announcement VARCHAR(500) NULL COMMENT '当前群公告，未设置时为空',
+  announcement_updated_at DATETIME(6) NULL COMMENT '公告最后更新时间（UTC），未更新时为空',
+  last_seq BIGINT UNSIGNED NOT NULL DEFAULT 0 COMMENT '房间末条消息序号，无消息时为 0',
+  last_message_at DATETIME(6) NULL COMMENT '房间末条消息的发送时间（UTC），无消息时为空',
+  created_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) COMMENT '房间创建时间（UTC）',
+  KEY ix_lobby_category (category_id, status, id),
+  KEY ix_lobby (status, id),
+  FOREIGN KEY (category_id) REFERENCES room_categories (id),
+  CHECK ((last_seq = 0 AND last_message_at IS NULL) OR
+         (last_seq &gt; 0 AND last_message_at IS NOT NULL))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE room_members (
+  room_id BIGINT UNSIGNED NOT NULL COMMENT '所属房间 ID',
+  user_id BIGINT UNSIGNED NOT NULL COMMENT '成员用户 ID',
+  role ENUM('admin','member') NOT NULL DEFAULT 'member' COMMENT '成员角色：管理员或普通成员',
+  joined_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) COMMENT '本轮入群时间（UTC）',
+  left_at DATETIME(6) NULL COMMENT '本轮退群时间（UTC），为空表示仍在群内',
+  muted_until DATETIME(6) NULL COMMENT '禁言截止时间（UTC），为空表示未禁言',
+  joined_seq BIGINT UNSIGNED NOT NULL COMMENT '本轮入群时的房间末条序号，只能读取之后的消息',
+  last_read_seq BIGINT UNSIGNED NOT NULL COMMENT '本轮连续已读位置，入群时等于 joined_seq',
+  PRIMARY KEY (room_id, user_id),
+  KEY ix_member_conversations (user_id, left_at, room_id),
+  KEY ix_room_active_members (room_id, left_at, user_id),
+  FOREIGN KEY (room_id) REFERENCES rooms (id),
+  FOREIGN KEY (user_id) REFERENCES users (id),
+  CHECK (last_read_seq &gt;= joined_seq),
+  CHECK (left_at IS NULL OR left_at &gt;= joined_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE room_messages (
+  room_id BIGINT UNSIGNED NOT NULL COMMENT '所属房间 ID',
+  seq BIGINT UNSIGNED NOT NULL COMMENT '房间内递增的消息序号，从 1 开始',
+  sender_id BIGINT UNSIGNED NOT NULL COMMENT '发送者的用户 ID',
+  client_msg_id BINARY(16) NOT NULL COMMENT '客户端消息 UUID 的二进制值，用于重试去重',
+  kind ENUM('text','image') NOT NULL COMMENT '消息类型：文本或图片',
+  state ENUM('visible','recalled','hidden') NOT NULL DEFAULT 'visible' COMMENT '消息状态：可见、已撤回或已隐藏',
+  body VARCHAR(2000) NULL COMMENT '可见文本消息的正文，其他情况为空',
+  media_key VARCHAR(512) NULL COMMENT '可见图片消息的对象存储键，其他情况为空',
+  created_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) COMMENT '服务端记录的发送时间（UTC）',
+  PRIMARY KEY (room_id, seq),
+  UNIQUE KEY uq_message_retry (room_id, sender_id, client_msg_id),
+  FOREIGN KEY (room_id, sender_id) REFERENCES room_members (room_id, user_id),
+  CHECK (seq &gt; 0),
+  CHECK ((state &lt;&gt; 'visible' AND body IS NULL AND media_key IS NULL) OR
+         (state = 'visible' AND kind = 'text' AND body IS NOT NULL
+          AND CHAR_LENGTH(TRIM(body)) &gt; 0 AND media_key IS NULL) OR
+         (state = 'visible' AND kind = 'image' AND body IS NULL
+          AND media_key IS NOT NULL AND CHAR_LENGTH(media_key) &gt; 0))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE room_favorites (
+  user_id BIGINT UNSIGNED NOT NULL COMMENT '发起收藏的用户 ID',
+  room_id BIGINT UNSIGNED NOT NULL COMMENT '被收藏的房间 ID',
+  created_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) COMMENT '收藏时间（UTC）',
+  PRIMARY KEY (user_id, room_id),
+  KEY ix_favorite_list (user_id, created_at, room_id),
+  FOREIGN KEY (user_id) REFERENCES users (id),
+  FOREIGN KEY (room_id) REFERENCES rooms (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE user_blocks (
+  user_id BIGINT UNSIGNED NOT NULL COMMENT '发起拉黑的用户 ID',
+  blocked_user_id BIGINT UNSIGNED NOT NULL COMMENT '被拉黑的用户 ID',
+  created_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) COMMENT '拉黑时间（UTC）',
+  PRIMARY KEY (user_id, blocked_user_id),
+  FOREIGN KEY (user_id) REFERENCES users (id),
+  FOREIGN KEY (blocked_user_id) REFERENCES users (id),
+  CHECK (user_id &lt;&gt; blocked_user_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE user_feedback (
+  id BIGINT UNSIGNED AUTO_INCREMENT COMMENT '反馈 ID' PRIMARY KEY,
+  user_id BIGINT UNSIGNED NOT NULL COMMENT '提交反馈的用户 ID',
+  body VARCHAR(2000) NOT NULL COMMENT '反馈正文',
+  status ENUM('pending','resolved') NOT NULL DEFAULT 'pending' COMMENT '处理状态：待处理或已解决',
+  created_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) COMMENT '反馈提交时间（UTC）',
+  KEY ix_feedback_queue (status, created_at, id),
+  FOREIGN KEY (user_id) REFERENCES users (id),
+  CHECK (CHAR_LENGTH(TRIM(body)) &gt; 0)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+INSERT INTO room_categories (code, name, sort_order) VALUES
+  ('casual', '闲聊', 10), ('interest', '兴趣', 20), ('mbti', 'MBTI', 30);</code></pre>
+<p>初始房间由运营创建；管理员由运营分配，退出后重新加入时默认恢复为普通成员，不能借退出清除未到期的禁言。发送 UUID 用 <code>UUID_TO_BIN(?)</code> 转换；API 不采信客户端提供的发件人、序号或时间。</p>
+</section>
+</main>
+</body>
+</html>

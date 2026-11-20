@@ -1,0 +1,21 @@
+<view class="screen tab-screen">
+  <view class="pills filters">
+    <button class="pill {{!unread ? 'selected' : ''}}" data-mode="all" bindtap="filter">全部</button>
+    <button class="pill {{unread ? 'selected' : ''}}" data-mode="unread" bindtap="filter">未读</button>
+  </view>
+  <view wx:for="{{conversations}}" wx:key="id" class="conversation row" data-id="{{item.id}}" bindtap="enterRoom" role="button" aria-label="进入{{item.name}}">
+    <image wx:if="{{item.cover}}" class="cover" src="{{item.cover}}" mode="aspectFill" />
+    <view wx:else class="cover cover-default"><glyph-icon name="chat" /></view>
+    <view class="stack room-copy">
+      <text class="room-name ellipsis">{{item.name}}</text>
+      <text class="summary ellipsis muted">{{item.summary}}</text>
+    </view>
+    <view class="trailing">
+      <text>{{item.activity}}</text>
+      <text class="unread" wx:if="{{item.badge}}">{{item.badge}}</text>
+    </view>
+  </view>
+  <view wx:if="{{error}}" class="empty error"><text>{{error}}</text><button class="text-button" bindtap="load">重试</button></view>
+  <view wx:elif="{{!loaded}}" class="empty">正在加载会话…</view>
+  <view wx:elif="{{!conversations.length}}" class="empty">{{unread ? '没有未读消息' : '加入聊天室后会在这里显示'}}</view>
+</view>

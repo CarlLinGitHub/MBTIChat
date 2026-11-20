@@ -1,0 +1,11 @@
+{
+  "setting": {
+    "es6": true,
+    "urlCheck": false
+  },
+  "compileType": "miniprogram",
+  "miniprogramRoot": "miniprogram/",
+  "projectname": "MBTIChat",
+  "libVersion": "3.7.8",
+  "appid": "touristappid"
+}

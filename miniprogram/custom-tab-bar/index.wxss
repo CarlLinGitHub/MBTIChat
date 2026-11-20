@@ -1,0 +1,7 @@
+:host { display: block; }
+.tab-bar { position: fixed; z-index: 5; inset: auto 0 0; display: flex; padding: 8rpx 0 calc(8rpx + env(safe-area-inset-bottom)); border-top: 1px solid #e3d9db; background: #faf6f4; }
+.tab { display: flex; flex: 1; flex-direction: column; align-items: center; padding: 0; border: 0; background: transparent; color: #271330; font-size: 23rpx; line-height: 1.24; }
+.tab::after { border: 0; }
+.tab.selected { color: #6e3dad; }
+.icon { width: 82rpx; height: 44rpx; display: flex; align-items: center; justify-content: center; margin-bottom: 2rpx; border-radius: 999rpx; }
+.selected .icon { background: #eee1fb; }

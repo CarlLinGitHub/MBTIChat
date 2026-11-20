@@ -1,0 +1,62 @@
+<view class="login-page" aria-hidden="{{dialog !== ''}}">
+  <image class="login-hero" src="/assets/login-hero.webp" mode="aspectFit" aria-hidden="true" />
+  <text class="login-brand">MBTIChat</text>
+  <text class="login-tagline">找到聊得来的人</text>
+
+  <view class="login-actions">
+    <button class="login-primary" bindtap="loginWechat" disabled="{{pending !== '' || destination !== ''}}" loading="{{pending === 'wechat'}}">
+      <view class="login-chat-icon" wx:if="{{pending !== 'wechat'}}" aria-hidden="true">
+        <view class="login-chat-bubble login-chat-bubble-back" />
+        <view class="login-chat-bubble login-chat-bubble-front" />
+      </view>
+      {{pending === 'wechat' ? '登录中…' : '微信登录'}}
+    </button>
+
+    <view class="login-consent">
+      <checkbox-group bindchange="changeConsent">
+        <label class="login-consent-label">
+          <checkbox class="login-check" value="agree" color="#460c49" checked="{{agreed}}" disabled="{{pending !== '' || destination !== ''}}" />
+          <text>我已阅读并同意</text>
+        </label>
+      </checkbox-group>
+      <view class="login-consent-docs">
+        <button class="login-link login-policy-link" data-policy="agreement" bindtap="openPolicy">《用户协议》</button>
+        <text>和</text>
+        <button class="login-link login-policy-link" data-policy="privacy" bindtap="openPolicy">《隐私政策》</button>
+      </view>
+    </view>
+
+    <button wx:if="{{localDemo}}" class="login-demo" bindtap="openAccounts" disabled="{{pending !== '' || destination !== ''}}">
+      {{pending === 'account' ? '登录中…' : '使用本地演示账号'}}
+    </button>
+
+    <view wx:if="{{pending === 'resume' || pending === 'route'}}" class="login-status">
+      {{pending === 'resume' ? '正在恢复登录…' : '正在打开页面…'}}
+    </view>
+    <view wx:if="{{error}}" class="login-feedback">
+      <text class="error">{{error}}</text>
+      <button wx:if="{{retry === 'resume'}}" class="login-link" bindtap="resume">重试恢复登录</button>
+      <button wx:elif="{{retry === 'route'}}" class="login-link" bindtap="openDestination">重试打开页面</button>
+      <button wx:elif="{{retry === 'wechat'}}" class="login-link" bindtap="loginWechat">重试微信登录</button>
+      <button wx:elif="{{retry === 'account'}}" class="login-link" bindtap="openAccounts">重新选择账号</button>
+    </view>
+  </view>
+</view>
+
+<view wx:if="{{dialog}}" class="login-modal">
+  <view class="login-modal-mask" bindtap="closeDialog" />
+  <view class="login-dialog" aria-label="{{dialogTitle}}">
+    <text class="login-dialog-title">{{dialogTitle}}</text>
+    <block wx:if="{{dialog === 'accounts'}}">
+      <text class="login-dialog-note">仅供本地开发与演示。「新用户」会创建新的演示身份。</text>
+      <button wx:for="{{accounts}}" wx:key="id" class="login-account" data-account="{{item.id}}" bindtap="loginAccount">
+        <text>{{item.label}}</text>
+        <text class="login-account-id">{{item.id}}</text>
+      </button>
+    </block>
+    <scroll-view wx:else class="login-policy" scroll-y="{{true}}">
+      <text wx:for="{{paragraphs}}" wx:key="*this" class="login-paragraph">{{item}}</text>
+    </scroll-view>
+    <button class="login-dialog-close" bindtap="closeDialog">{{dialog === 'accounts' ? '取消' : '知道了'}}</button>
+  </view>
+</view>
